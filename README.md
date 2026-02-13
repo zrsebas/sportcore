@@ -1,79 +1,130 @@
-# SportCore - Sistema de Gestión de Pedidos Deportivos
+# Implementación del Patrón Creacional – SportCore
 
-Proyecto Django para la gestión de pedidos de productos deportivos con arquitectura limpia.
+##  Contexto
 
-## 🚀 Características
+En el sistema SportCore, el proceso de creación de un Pedido implica múltiples pasos:
 
-- **Gestión de Categorías**: Organiza tus productos deportivos por categorías
-- **Gestión de Clientes**: Registro y gestión de clientes
-- **Gestión de Productos**: Catálogo de productos con precios y descripciones
-- **Control de Inventario**: Seguimiento de stock en tiempo real
-- **Sistema de Pedidos**: Creación y gestión de pedidos
-- **API REST**: Endpoint para procesamiento de pedidos
-- **Panel de Administración**: Interfaz Django Admin completa
+- Asociar un cliente
+- Agregar múltiples productos
+- Crear detalles de pedido
+- Validar que el pedido tenga al menos un producto
+- Calcular el total
+- Confirmar el pedido
 
-## 📋 Modelos de Datos
+Debido a esta complejidad, se decidió implementar el patrón creacional **Builder** para encapsular la construcción del objeto Pedido.
 
-- **Categorías**: Clasificación de productos
-- **Clientes**: Información de clientes
-- **Productos**: Catálogo de artículos deportivos
-- **Inventarios**: Control de stock
-- **Pedidos**: Gestión de órdenes
-- **DetallePedidos**: Items de cada pedido
+---
 
-## 🛠️ Instalación
+##  Objetivo del Patrón
 
-1. Clonar el repositorio
-2. Crear entorno virtual: `python -m venv venv`
-3. Activar entorno: `venv\Scripts\activate` (Windows)
-4. Instalar dependencias: `pip install django==6.0.2`
-5. Migrar la base de datos: `python manage.py migrate`
-6. Crear superusuario: `python manage.py createsuperuser`
-7. Iniciar servidor: `python manage.py runserver`
+Separar la lógica de construcción del objeto Pedido del flujo de la Vista y del Servicio, garantizando:
 
-## 🔐 Acceso por Defecto
+- Bajo acoplamiento
+- Mayor mantenibilidad
+- Construcción paso a paso
+- Validación antes de persistencia
 
-- **URL**: http://127.0.0.1:8000
-- **Admin**: http://127.0.0.1:8000/admin
-- **API**: http://127.0.0.1:8000/api/pedido/
+---
 
-## 📊 Arquitectura
+## Arquitectura Aplicada
 
+El flujo de interacción entre componentes es el siguiente:
+
+1. La Vista recibe la solicitud HTTP.
+2. La Vista delega el procesamiento al PedidoService.
+3. El Servicio utiliza el PedidoBuilder para construir el objeto Pedido.
+4. El Builder crea el Pedido de manera controlada y lo persiste solo cuando es válido.
+
+---
+
+## Diagrama de Interacción
+
+```mermaid
+flowchart TD
+    V[ProcesarPedidoView<br/>Capa de Interfaz]
+    S[PedidoService<br/>Capa de Aplicación]
+    B[PedidoBuilder<br/>Patrón Creacional]
+    P[Pedido<br/>Entidad de Dominio]
+
+    V --> S
+    S --> B
+    B --> P
 ```
-sportcore/
-├── config/          # Configuración Django
-├── sportcore_app/   # Aplicación principal
-│   ├── application/ # Lógica de negocio
-│   ├── domain/      # Modelos de dominio
-│   └── infra/       # Infraestructura
-├── venv/           # Entorno virtual
-└── db.sqlite3      # Base de datos
-```
+---
 
-## 🏃‍♂️ Uso
+##  Flujo Detallado
 
-1. Accede al panel de admin para gestionar datos
-2. Crea categorías, productos y clientes
-3. Gestiona el inventario
-4. Procesa pedidos vía API
-5. Monitorea el estado de los pedidos
+###  Vista (ProcesarPedidoView)
 
-## 📝 Ejemplos
+Responsabilidad:
+- Recibir datos del cliente.
+- Instanciar el PedidoService.
+- Retornar la respuesta HTTP.
 
-### API de Pedidos
-```bash
-GET http://127.0.0.1:8000/api/pedido/
-# Respuesta: {"pedido_id": 1}
-```
+No contiene lógica de negocio.
 
-## 🤝 Contribución
+---
 
-1. Fork del proyecto
-2. Crear feature branch
-3. Commit changes
-4. Push to branch
-5. Pull Request
+###  Service Layer (PedidoService)
 
-## 📄 Licencia
+Responsabilidad:
+- Orquestar el caso de uso.
+- Validar disponibilidad de inventario.
+- Invocar el Builder.
+- Calcular total.
+- Procesar pago.
+- Confirmar pedido.
 
-MIT License
+Actúa como coordinador del proceso.
+
+---
+
+###  Builder (PedidoBuilder)
+
+Responsabilidad:
+- Construir el Pedido paso a paso.
+- Agregar productos.
+- Crear DetallePedido.
+- Validar que el pedido tenga al menos un producto.
+- Persistir el Pedido cuando es válido.
+
+Implementa una construcción controlada del objeto complejo.
+
+---
+
+##  Justificación Técnica
+
+El objeto Pedido es considerado complejo porque:
+
+- Contiene múltiples DetallePedido.
+- Requiere validaciones antes de guardarse.
+- Involucra reglas de negocio.
+- No puede existir vacío.
+
+El uso del patrón Builder permite:
+
+- Evitar constructores con múltiples parámetros.
+- Encapsular la lógica de construcción.
+- Cumplir el principio de Responsabilidad Única.
+- Facilitar futuras extensiones del proceso de creación.
+
+---
+
+##  Beneficios Obtenidos
+
+- Separación clara entre capas.
+- Bajo acoplamiento.
+- Código más limpio.
+- Mejor mantenibilidad.
+- Arquitectura preparada para evolución futura.
+- Cumplimiento de principios SOLID.
+
+---
+
+##  Conclusión
+
+La implementación del patrón creacional Builder en SportCore permite gestionar adecuadamente la construcción del Pedido, evitando que la Vista o el Servicio asuman responsabilidades que no les corresponden.
+
+Esto mejora la calidad arquitectónica del sistema y facilita su evolución futura.
+
+
